@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable class-methods-use-this */
-const { LimitedArray, getIndexBelowMax } = require('./hash-table-helpers');
+const { LimitedArray, getIndexBelowMax, LinkedList } = require('./hash-table-helpers');
 
 class HashTable {
   constructor(limit = 8) {
@@ -28,7 +28,6 @@ class HashTable {
     });
     return fullCells / this.limit >= 0.75;
   }
-
   // Adds the given key, value pair to the hash table
   // Fetch the bucket associated with the given key using the getIndexBelowMax function
   // If no bucket has been created for that index, instantiate a new bucket and add the key, value pair to that new bucket
@@ -36,10 +35,11 @@ class HashTable {
   insert(key, value) {
     if (this.capacityIsFull()) this.resize();
     const index = getIndexBelowMax(key.toString(), this.limit);
-    let bucket = this.storage.get(index) || [];
-
-    bucket = bucket.filter(item => item[0] !== key);
-    bucket.push([key, value]);
+    let bucket = this.storage.get(index);
+    if (!bucket) {
+      bucket = new LinkedList();
+    }
+    bucket.addToTail([key, value]);
     this.storage.set(index, bucket);
   }
   // Removes the key, value pair from the hash table
@@ -50,7 +50,7 @@ class HashTable {
     let bucket = this.storage.get(index);
 
     if (bucket) {
-      bucket = bucket.filter(item => item[0] !== key);
+      bucket = delete bucket[key];
       this.storage.set(index, bucket);
     }
   }
@@ -62,7 +62,7 @@ class HashTable {
     const bucket = this.storage.get(index);
     let retrieved;
     if (bucket) {
-      retrieved = bucket.filter(item => item[0] === key)[0];
+      retrieved = bucket.contains(key);
     }
 
     return retrieved ? retrieved[1] : undefined;
